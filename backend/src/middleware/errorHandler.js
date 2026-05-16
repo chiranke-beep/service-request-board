@@ -1,24 +1,18 @@
-/**
- * Global error handler middleware.
- * Catches any error passed via next(err) from routes.
- */
-const errorHandler = (err, _req, res, _next) => {
-  console.error('❌ Error:', err.message);
+function errorHandler(err, req, res, next) {
+  console.error(err.stack);
 
-  // Mongoose validation error
+  // Mongoose validation errors (missing required fields, enum mismatches, etc.)
   if (err.name === 'ValidationError') {
     const messages = Object.values(err.errors).map((e) => e.message);
     return res.status(400).json({ error: 'Validation failed', details: messages });
   }
 
-  // Mongoose bad ObjectId
+  // Invalid MongoDB ObjectId (e.g. /api/jobs/not-a-real-id)
   if (err.name === 'CastError') {
     return res.status(400).json({ error: 'Invalid ID format' });
   }
 
-  // Default 500
-  const status = err.statusCode || 500;
-  res.status(status).json({ error: err.message || 'Internal server error' });
-};
+  res.status(err.status || 500).json({ error: err.message || 'Something went wrong' });
+}
 
 module.exports = errorHandler;

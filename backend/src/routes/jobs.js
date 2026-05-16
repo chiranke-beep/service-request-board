@@ -4,11 +4,11 @@ const mongoose = require('mongoose');
 const JobRequest = require('../models/JobRequest');
 const { validateJob, validateStatus } = require('../middleware/validate');
 
-// ── Helper: check valid MongoDB ObjectId ───────────────────────────────────────
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+function isValidId(id) {
+  return mongoose.Types.ObjectId.isValid(id);
+}
 
-// ── GET /api/jobs ──────────────────────────────────────────────────────────────
-// List all jobs. Supports optional filters: ?category=Plumbing &status=Open &search=tap
+// Get all jobs. You can filter by category, status, or search by keyword.
 router.get('/', async (req, res, next) => {
   try {
     const { category, status, search } = req.query;
@@ -17,7 +17,6 @@ router.get('/', async (req, res, next) => {
     if (category) filter.category = category;
     if (status) filter.status = status;
 
-    // Bonus: keyword search across title and description
     if (search) {
       filter.$or = [
         { title: { $regex: search, $options: 'i' } },
@@ -32,8 +31,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// ── GET /api/jobs/:id ──────────────────────────────────────────────────────────
-// Fetch a single job by ID
+// Get a single job by its ID.
 router.get('/:id', async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) {
@@ -51,8 +49,7 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// ── POST /api/jobs ─────────────────────────────────────────────────────────────
-// Create a new job request
+// Create a new job request.
 router.post('/', validateJob, async (req, res, next) => {
   try {
     const { title, description, category, location, contactName, contactEmail } = req.body;
@@ -72,8 +69,7 @@ router.post('/', validateJob, async (req, res, next) => {
   }
 });
 
-// ── PATCH /api/jobs/:id ────────────────────────────────────────────────────────
-// Update status only
+// Update the status of a job (Open, In Progress, Closed).
 router.patch('/:id', validateStatus, async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) {
@@ -96,8 +92,7 @@ router.patch('/:id', validateStatus, async (req, res, next) => {
   }
 });
 
-// ── DELETE /api/jobs/:id ───────────────────────────────────────────────────────
-// Delete a job
+// Delete a job by ID.
 router.delete('/:id', async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) {
