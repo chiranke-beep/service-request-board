@@ -1,17 +1,26 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-require('dotenv').config();
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
 const app = require('../../src/index');
 const JobRequest = require('../../src/models/JobRequest');
 
+// Allow extra time for MongoMemoryServer to download binary on first CI run
+jest.setTimeout(60000);
+
+let mongoServer;
+
 // ── Setup / Teardown ───────────────────────────────────────────────────────────
 beforeAll(async () => {
-  await mongoose.connect(process.env.MONGODB_URI);
+  // Start in-memory MongoDB (no Atlas connection needed)
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  await mongoose.connect(uri);
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
+  await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
 beforeEach(async () => {
@@ -97,7 +106,7 @@ describe('POST /api/jobs', () => {
 
     expect(res.statusCode).toBe(201);
     expect(res.body.title).toBe(payload.title);
-    expect(res.body.status).toBe('Open'); // default status
+    expect(res.body.status).toBe('Open');
     expect(res.body._id).toBeDefined();
     expect(res.body.createdAt).toBeDefined();
   });
