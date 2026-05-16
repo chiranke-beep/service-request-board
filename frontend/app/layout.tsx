@@ -13,13 +13,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={geist.className}>
-      <body className="min-h-screen bg-gray-50 text-gray-900 flex flex-col">
+      <body className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
         <Navbar />
-        <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8">
+        <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-10">
           {children}
         </main>
-        <footer className="border-t border-gray-200 py-4 text-center text-sm text-gray-400">
-          FixDesk
+        <footer className="border-t border-slate-200 py-5 text-center text-xs text-slate-400 tracking-wide">
+          FixDesk — Service Request Management
         </footer>
       </body>
     </html>

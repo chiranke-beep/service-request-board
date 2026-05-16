@@ -36,10 +36,7 @@ export default function NewJobPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setErrors({});
     setApiError('');
     setSubmitting(true);
@@ -47,8 +44,7 @@ export default function NewJobPage() {
       await createJob(form);
       router.push('/');
     } catch (err: unknown) {
-      const msg = (err as { error?: string })?.error || 'Something went wrong, please try again.';
-      setApiError(msg);
+      setApiError((err as { error?: string })?.error || 'Something went wrong.');
     } finally {
       setSubmitting(false);
     }
@@ -58,106 +54,84 @@ export default function NewJobPage() {
     return {
       value: form[name],
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        setForm((prev) => ({ ...prev, [name]: e.target.value }));
-        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+        setForm((p) => ({ ...p, [name]: e.target.value }));
+        if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }));
       },
     };
   }
 
+  const inputBase = 'w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
+  const inputNormal = `${inputBase} border-slate-200 text-slate-900 placeholder:text-slate-400`;
+  const inputError  = `${inputBase} border-red-300 text-slate-900 placeholder:text-slate-400`;
+
   return (
     <div className="max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">New Service Request</h1>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">New Request</h1>
+        <p className="mt-1 text-sm text-slate-500">Fill in the details and we'll log the job.</p>
+      </div>
 
       {apiError && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm">{apiError}</div>
+        <div className="mb-5 rounded-xl bg-red-50 border border-red-100 px-4 py-3 text-red-600 text-sm">
+          {apiError}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title <span className="text-red-500">*</span>
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+            Title <span className="text-red-400 normal-case font-normal">required</span>
           </label>
-          <input
-            type="text"
-            placeholder="e.g. Leaking kitchen tap"
-            className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.title ? 'border-red-400' : 'border-gray-200'}`}
-            {...field('title')}
-          />
-          {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
+          <input type="text" placeholder="e.g. Leaking kitchen tap"
+            className={errors.title ? inputError : inputNormal} {...field('title')} />
+          {errors.title && <p className="mt-1.5 text-xs text-red-500">{errors.title}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description <span className="text-red-500">*</span>
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+            Description <span className="text-red-400 normal-case font-normal">required</span>
           </label>
-          <textarea
-            rows={4}
-            placeholder="Describe the issue in detail..."
-            className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none ${errors.description ? 'border-red-400' : 'border-gray-200'}`}
-            {...field('description')}
-          />
-          {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
+          <textarea rows={4} placeholder="Describe the issue in detail..."
+            className={`${errors.description ? inputError : inputNormal} resize-none`} {...field('description')} />
+          {errors.description && <p className="mt-1.5 text-xs text-red-500">{errors.description}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <select
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-              {...field('category')}
-            >
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Category</label>
+            <select className={inputNormal} {...field('category')}>
               <option value="">Select...</option>
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <input
-              type="text"
-              placeholder="e.g. Glasgow"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              {...field('location')}
-            />
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Location</label>
+            <input type="text" placeholder="e.g. Glasgow" className={inputNormal} {...field('location')} />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
-            <input
-              type="text"
-              placeholder="Full name"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              {...field('contactName')}
-            />
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Contact Name</label>
+            <input type="text" placeholder="Full name" className={inputNormal} {...field('contactName')} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
-            <input
-              type="email"
-              placeholder="email@example.com"
-              className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.contactEmail ? 'border-red-400' : 'border-gray-200'}`}
-              {...field('contactEmail')}
-            />
-            {errors.contactEmail && <p className="mt-1 text-xs text-red-500">{errors.contactEmail}</p>}
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Contact Email</label>
+            <input type="email" placeholder="email@example.com"
+              className={errors.contactEmail ? inputError : inputNormal} {...field('contactEmail')} />
+            {errors.contactEmail && <p className="mt-1.5 text-xs text-red-500">{errors.contactEmail}</p>}
           </div>
         </div>
 
         <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-          >
+          <button type="button" onClick={() => router.back()}
+            className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {submitting ? 'Submitting...' : 'Submit Request'}
+          <button type="submit" disabled={submitting}
+            className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 transition-colors shadow-sm">
+            {submitting ? 'Submitting…' : 'Submit Request'}
           </button>
         </div>
       </form>

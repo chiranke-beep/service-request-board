@@ -1,15 +1,16 @@
 type Status = 'Open' | 'In Progress' | 'Closed';
 
-const colours: Record<Status, string> = {
-  Open: 'bg-green-100 text-green-700',
-  'In Progress': 'bg-yellow-100 text-yellow-700',
-  Closed: 'bg-gray-100 text-gray-500',
+const styles: Record<Status, string> = {
+  Open:        'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+  'In Progress':'bg-amber-50  text-amber-700  ring-1 ring-amber-200',
+  Closed:      'bg-slate-100  text-slate-500  ring-1 ring-slate-200',
 };
 
 export default function StatusBadge({ status }: { status: string }) {
-  const cls = colours[status as Status] ?? 'bg-gray-100 text-gray-500';
+  const cls = styles[status as Status] ?? styles.Closed;
   return (
-    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${cls}`}>
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cls}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
       {status}
     </span>
   );
