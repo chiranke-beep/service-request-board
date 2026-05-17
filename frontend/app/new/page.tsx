@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createJob } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 const CATEGORIES = ['Plumbing', 'Electrical', 'Painting', 'Joinery', 'Other'];
 
@@ -10,6 +11,21 @@ type FormErrors = Partial<Record<string, string>>;
 
 export default function NewJobPage() {
   const router = useRouter();
+  const { user } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (user === null) {
+      // Small delay to let AuthContext load from localStorage first
+      const t = setTimeout(() => {
+        if (!localStorage.getItem('fixdesk_auth')) {
+          router.push('/login');
+        }
+      }, 300);
+      return () => clearTimeout(t);
+    }
+  }, [user, router]);
+
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [apiError, setApiError] = useState('');

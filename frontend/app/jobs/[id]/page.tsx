@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getJob, updateJobStatus, deleteJob } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import StatusBadge from '@/components/StatusBadge';
 
 const STATUSES = ['Open', 'In Progress', 'Closed'];
@@ -22,11 +23,15 @@ type Job = {
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
+
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     getJob(id).then(setJob).catch(() => setError('Job not found.')).finally(() => setLoading(false));
@@ -35,17 +40,34 @@ export default function JobDetailPage() {
   async function handleStatusChange(e: React.ChangeEvent<HTMLSelectElement>) {
     if (!job) return;
     setUpdating(true);
+    setUpdateError('');
     try {
       setJob(await updateJobStatus(job._id, e.target.value));
-    } catch { alert('Failed to update status.'); }
-    finally { setUpdating(false); }
+    } catch {
+      setUpdateError('Failed to update status. Please try again.');
+    } finally {
+      setUpdating(false);
+    }
   }
 
   async function handleDelete() {
+    if (!user) {
+      setDeleteError('You need to log in before you can delete a request.');
+      return;
+    }
     if (!job || !confirm('Delete this request? This cannot be undone.')) return;
     setDeleting(true);
-    try { await deleteJob(job._id); router.push('/'); }
-    catch { alert('Failed to delete.'); setDeleting(false); }
+    setDeleteError('');
+    try {
+      await deleteJob(job._id);
+      router.push('/');
+    } catch (err: unknown) {
+      const msg = (err as { error?: string })?.error;
+      setDeleteError(msg === 'Not authorised — please log in'
+        ? 'You need to be logged in to delete a request.'
+        : 'Failed to delete. Please try again.');
+      setDeleting(false);
+    }
   }
 
   if (loading) return (
@@ -72,7 +94,7 @@ export default function JobDetailPage() {
       </button>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        {/* Header band */}
+        {/* Header */}
         <div className="px-6 pt-6 pb-5 border-b border-slate-100">
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-xl font-bold text-slate-900 leading-snug">{job.title}</h1>
@@ -96,18 +118,41 @@ export default function JobDetailPage() {
         </div>
 
         {/* Actions */}
-        <div className="px-6 py-5 flex items-end gap-3">
-          <div className="flex-1">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Update Status</label>
-            <select value={job.status} onChange={handleStatusChange} disabled={updating}
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-slate-800">
-              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+        <div className="px-6 py-5 space-y-3">
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Update Status</label>
+              <select value={job.status} onChange={handleStatusChange} disabled={updating}
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 text-slate-800">
+                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            {user ? (
+              <button onClick={handleDelete} disabled={deleting}
+                className="rounded-xl border border-red-200 text-red-500 hover:bg-red-50 px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50">
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            ) : (
+              <button onClick={handleDelete}
+                className="rounded-xl border border-slate-200 text-slate-400 px-5 py-2.5 text-sm font-medium cursor-pointer hover:bg-slate-50 transition-colors">
+                Delete
+              </button>
+            )}
           </div>
-          <button onClick={handleDelete} disabled={deleting}
-            className="rounded-xl border border-red-200 text-red-500 hover:bg-red-50 px-5 py-2.5 text-sm font-medium transition-colors disabled:opacity-50">
-            {deleting ? 'Deleting…' : 'Delete'}
-          </button>
+
+          {updateError && (
+            <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{updateError}</p>
+          )}
+          {deleteError && (
+            <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+              <p className="text-sm text-amber-700">{deleteError}</p>
+              <button onClick={() => router.push('/login')}
+                className="text-xs text-blue-600 font-medium hover:underline ml-3 whitespace-nowrap">
+                Log in →
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

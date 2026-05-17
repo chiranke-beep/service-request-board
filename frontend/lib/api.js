@@ -1,46 +1,54 @@
-// Central place to call the backend API. All fetch calls go through here.
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+function getToken() {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem('fixdesk_auth');
+  return stored ? JSON.parse(stored).token : null;
+}
+
+function authHeaders() {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export async function getJobs(params = {}) {
   const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${BASE_URL}/api/jobs${query ? `?${query}` : ''}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error('Failed to fetch jobs');
+  const res = await fetch(`${API}/api/jobs${query ? `?${query}` : ''}`);
+  if (!res.ok) throw await res.json();
   return res.json();
 }
 
 export async function getJob(id) {
-  const res = await fetch(`${BASE_URL}/api/jobs/${id}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Job not found');
+  const res = await fetch(`${API}/api/jobs/${id}`);
+  if (!res.ok) throw await res.json();
   return res.json();
 }
 
 export async function createJob(data) {
-  const res = await fetch(`${BASE_URL}/api/jobs`, {
+  const res = await fetch(`${API}/api/jobs`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok) throw json;
-  return json;
+  if (!res.ok) throw await res.json();
+  return res.json();
 }
 
 export async function updateJobStatus(id, status) {
-  const res = await fetch(`${BASE_URL}/api/jobs/${id}`, {
+  const res = await fetch(`${API}/api/jobs/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   });
-  const json = await res.json();
-  if (!res.ok) throw json;
-  return json;
+  if (!res.ok) throw await res.json();
+  return res.json();
 }
 
 export async function deleteJob(id) {
-  const res = await fetch(`${BASE_URL}/api/jobs/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to delete job');
+  const res = await fetch(`${API}/api/jobs/${id}`, {
+    method: 'DELETE',
+    headers: { ...authHeaders() },
+  });
+  if (!res.ok) throw await res.json();
   return res.json();
 }

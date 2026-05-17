@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const JobRequest = require('../models/JobRequest');
 const { validateJob, validateStatus } = require('../middleware/validate');
+const { protect } = require('../middleware/auth');
 
 function isValidId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -49,8 +50,8 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// Create a new job request.
-router.post('/', validateJob, async (req, res, next) => {
+// Create a new job request — login required.
+router.post('/', protect, validateJob, async (req, res, next) => {
   try {
     const { title, description, category, location, contactName, contactEmail } = req.body;
 
@@ -92,8 +93,8 @@ router.patch('/:id', validateStatus, async (req, res, next) => {
   }
 });
 
-// Delete a job by ID.
-router.delete('/:id', async (req, res, next) => {
+// Delete a job by ID — login required.
+router.delete('/:id', protect, async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) {
       return res.status(400).json({ error: 'Invalid job ID format' });
