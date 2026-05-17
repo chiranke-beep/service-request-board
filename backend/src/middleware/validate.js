@@ -34,4 +34,4 @@ const validateStatus = [
   checkResult,
 ];
 
-module.exports = { validateJob, validateStatus };
+module.exports = { validateJob, validateStatus, checkResult };

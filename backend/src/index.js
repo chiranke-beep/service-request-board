@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const jobRoutes = require('./routes/jobs');
+const authRoutes = require('./routes/auth');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 
 // Catch-all for routes that don't exist
