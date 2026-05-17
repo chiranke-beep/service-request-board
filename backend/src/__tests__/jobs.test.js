@@ -9,10 +9,19 @@ const JobRequest = require('../../src/models/JobRequest');
 jest.setTimeout(60000);
 
 let mongoServer;
+let authToken;
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   await mongoose.connect(mongoServer.getUri());
+
+  // Register a test user and grab the JWT for protected route tests
+  const res = await request(app).post('/api/auth/register').send({
+    name: 'Test User',
+    email: 'test@example.com',
+    password: 'password123',
+  });
+  authToken = res.body.token;
 });
 
 afterAll(async () => {
@@ -86,7 +95,10 @@ describe('POST /api/jobs', () => {
       contactName: 'Kavinda Perera',
       contactEmail: 'kavinda.perera@example.com',
     };
-    const res = await request(app).post('/api/jobs').send(payload);
+    const res = await request(app)
+      .post('/api/jobs')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send(payload);
     expect(res.statusCode).toBe(201);
     expect(res.body.title).toBe(payload.title);
     expect(res.body.status).toBe('Open');
@@ -95,36 +107,47 @@ describe('POST /api/jobs', () => {
   });
 
   it('returns 400 if title is missing', async () => {
-    const res = await request(app).post('/api/jobs').send({ description: 'Missing title field' });
+    const res = await request(app)
+      .post('/api/jobs')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ description: 'Missing title field' });
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe('Validation failed');
     expect(res.body.details).toEqual(expect.arrayContaining(['Title is required']));
   });
 
   it('returns 400 if description is missing', async () => {
-    const res = await request(app).post('/api/jobs').send({ title: 'Fix tap' });
+    const res = await request(app)
+      .post('/api/jobs')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ title: 'Fix tap' });
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe('Validation failed');
     expect(res.body.details).toEqual(expect.arrayContaining(['Description is required']));
   });
 
   it('returns 400 for an invalid email format', async () => {
-    const res = await request(app).post('/api/jobs').send({
-      title: 'Fix tap',
-      description: 'Kitchen tap dripping',
-      contactEmail: 'not-an-email',
-    });
+    const res = await request(app)
+      .post('/api/jobs')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ title: 'Fix tap', description: 'Kitchen tap dripping', contactEmail: 'not-an-email' });
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe('Validation failed');
   });
 
   it('returns 400 for an invalid category', async () => {
-    const res = await request(app).post('/api/jobs').send({
-      title: 'Fix tap',
-      description: 'Kitchen tap dripping',
-      category: 'InvalidCategory',
-    });
+    const res = await request(app)
+      .post('/api/jobs')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ title: 'Fix tap', description: 'Kitchen tap dripping', category: 'InvalidCategory' });
     expect(res.statusCode).toBe(400);
     expect(res.body.error).toBe('Validation failed');
+  });
+
+  it('returns 401 if no token is provided', async () => {
+    const res = await request(app)
+      .post('/api/jobs')
+      .send({ title: 'Fix tap', description: 'Kitchen tap dripping' });
+    expect(res.statusCode).toBe(401);
   });
 });
